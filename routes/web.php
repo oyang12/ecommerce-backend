@@ -1,8 +1,10 @@
 <?php
 
-Route::get('/', function () {
-    return response()->json([
-        'status' => 'API RUNNING',
-        'app' => 'Ecommerce Backend'
-    ]);
+Route::get('/debug-db', function () {
+    try {
+        DB::connection()->getPdo();
+        return "DB CONNECTED";
+    } catch (\Exception $e) {
+        return $e->getMessage();
+    }
 });
