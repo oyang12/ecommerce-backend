@@ -42,3 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/products/{id}/reviews',[ReviewController::class,'productReviews']);
+
+Route::get('/test', function () {
+    return response()->json(['message' => 'API OK']);
+});
