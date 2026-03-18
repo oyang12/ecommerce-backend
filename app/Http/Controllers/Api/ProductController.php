@@ -12,36 +12,14 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        // Memanggil relasi images dan categories
-        $query = Product::with(['images', 'categories']);
-
-        // SEARCH PRODUCT
-        if ($request->search) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+        try {
+            // Coba ambil produk tanpa relasi categories dulu untuk tes
+            $products = Product::with(['images'])->latest()->paginate(12);
+            return response()->json($products);
+        } catch (\Exception $e) {
+            // Ini akan menampilkan pesan error asli di browser/postman daripada angka 500 saja
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        // FILTER CATEGORY
-        if ($request->category_id) {
-            $query->whereHas('categories', function ($q) use ($request) {
-                $q->where('categories.id', $request->category_id);
-            });
-        }
-
-        // SORT PRODUCT
-        if ($request->sort == 'price_asc') {
-            $query->orderBy('price', 'asc');
-        } elseif ($request->sort == 'price_desc') {
-            $query->orderBy('price', 'desc');
-        } elseif ($request->sort == 'newest') {
-            $query->orderBy('created_at', 'desc');
-        } else {
-            $query->orderBy('id', 'desc');
-        }
-
-        // PAGINATION (12 produk per halaman)
-        $products = $query->paginate(12);
-
-        return response()->json($products);
     }
 
     public function show($slug)
