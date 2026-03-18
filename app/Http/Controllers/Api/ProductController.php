@@ -65,19 +65,20 @@ class ProductController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $file) {
-                $filename = time() . '_' . $file->getClientOriginalName();
+                // Tambahkan random string agar nama file benar-benar unik
+                $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
+                
                 $file->storeAs('products', $filename, 'public');
-
+        
                 ProductImage::create([
                     'product_id' => $product->id,
                     'image'      => $filename
                 ]);
-
+        
                 if ($index == 0) {
                     $thumbnail = $filename;
                 }
             }
-
             $product->update(['thumbnail' => $thumbnail]);
         }
 
