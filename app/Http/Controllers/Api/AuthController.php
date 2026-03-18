@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-// Pastikan baris ini ada agar tidak Error 500 lagi
+// Memastikan alamat induk benar agar tidak Error 500
 use App\Http\Controllers\Controller; 
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -23,14 +23,14 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        // Cetak error jika user tidak ditemukan atau password salah
+        // Cek apakah user ada dan password benar
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Email atau password yang kamu masukkan salah.'
             ], 401);
         }
 
-        // Hapus token lama agar database tidak penuh, lalu buat token baru
+        // Hapus token lama agar database bersih, lalu buat token baru (Sanctum)
         $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -40,7 +40,7 @@ class AuthController extends Controller
             'user'    => [
                 'name'  => $user->name,
                 'email' => $user->email,
-                'role'  => $user->role, // Penting: Next.js akan baca ini
+                'role'  => $user->role, // Penting untuk logika redirect di Next.js
             ]
         ]);
     }
