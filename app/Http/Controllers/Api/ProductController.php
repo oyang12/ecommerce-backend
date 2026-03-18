@@ -5,53 +5,40 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
-use Illuminate\Database\Eloquent\Model;
 use App\Models\ProductImage;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['images','categories']);
+        // Memanggil relasi images dan categories
+        $query = Product::with(['images', 'categories']);
 
-        // =========================
         // SEARCH PRODUCT
-        // =========================
         if ($request->search) {
-            $query->where('name','like','%'.$request->search.'%');
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // =========================
         // FILTER CATEGORY
-        // =========================
         if ($request->category_id) {
-            $query->whereHas('categories', function($q) use ($request){
+            $query->whereHas('categories', function ($q) use ($request) {
                 $q->where('categories.id', $request->category_id);
             });
         }
 
-        // =========================
         // SORT PRODUCT
-        // =========================
         if ($request->sort == 'price_asc') {
-            $query->orderBy('price','asc');
+            $query->orderBy('price', 'asc');
+        } elseif ($request->sort == 'price_desc') {
+            $query->orderBy('price', 'desc');
+        } elseif ($request->sort == 'newest') {
+            $query->orderBy('created_at', 'desc');
+        } else {
+            $query->orderBy('id', 'desc');
         }
 
-        elseif ($request->sort == 'price_desc') {
-            $query->orderBy('price','desc');
-        }
-
-        elseif ($request->sort == 'newest') {
-            $query->orderBy('created_at','desc');
-        }
-
-        else {
-            $query->orderBy('id','desc');
-        }
-
-        // =========================
-        // PAGINATION
-        // =========================
+        // PAGINATION (12 produk per halaman)
         $products = $query->paginate(12);
 
         return response()->json($products);
@@ -59,53 +46,52 @@ class ProductController extends Controller
 
     public function show($slug)
     {
-        return Product::where('slug',$slug)->with('images')->first();
+        $product = Product::where('slug', $slug)->with(['images', 'categories'])->first();
+        
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        return response()->json($product);
     }
 
     public function store(Request $request)
     {
-
         $product = Product::create([
-            'name' => $request->name,
-            'slug' => $request->slug,
+            'name'        => $request->name,
+            'slug'        => $request->slug ?? Str::slug($request->name),
             'description' => $request->description,
-            'price' => $request->price,
-            'stock' => $request->stock
+            'price'       => $request->price,
+            'stock'       => $request->stock
         ]);
 
         $thumbnail = null;
 
         if ($request->hasFile('images')) {
-
             foreach ($request->file('images') as $index => $file) {
-
-                $filename = time().'_'.$file->getClientOriginalName();
-
+                $filename = time() . '_' . $file->getClientOriginalName();
                 $file->storeAs('products', $filename, 'public');
 
                 ProductImage::create([
                     'product_id' => $product->id,
-                    'image' => $filename
+                    'image'      => $filename
                 ]);
 
-                if($index == 0){
+                if ($index == 0) {
                     $thumbnail = $filename;
                 }
             }
 
-            $product->update([
-                'thumbnail'=>$thumbnail
-            ]);
+            $product->update(['thumbnail' => $thumbnail]);
         }
 
-        if($request->categories)
-        {
+        if ($request->categories) {
             $product->categories()->sync($request->categories);
         }
 
         return response()->json([
             "message" => "Product created",
-            "data" => $product->load('images')
+            "data"    => $product->load('images')
         ]);
     }
 
@@ -113,35 +99,21 @@ class ProductController extends Controller
     {
         $product = Product::find($id);
 
-        if(!$product){
-            return response()->json([
-                "message" => "Product not found"
-            ],404);
-        }
-
-        $filename = $product->image;
-
-        if ($request->hasFile('image')) {
-
-            $file = $request->file('image');
-
-            $filename = time().'_'.$file->getClientOriginalName();
-
-            $file->storeAs('products', $filename, 'public');
+        if (!$product) {
+            return response()->json(["message" => "Product not found"], 404);
         }
 
         $product->update([
-            'name' => $request->name ?? $product->name,
-            'slug' => $request->slug ?? $product->slug,
+            'name'        => $request->name ?? $product->name,
+            'slug'        => $request->slug ?? $product->slug,
             'description' => $request->description ?? $product->description,
-            'price' => $request->price ?? $product->price,
-            'stock' => $request->stock ?? $product->stock,
-            'image' => $filename
+            'price'       => $request->price ?? $product->price,
+            'stock'       => $request->stock ?? $product->stock,
         ]);
 
         return response()->json([
             "message" => "Product updated",
-            "data" => $product
+            "data"    => $product
         ]);
     }
 
@@ -149,47 +121,26 @@ class ProductController extends Controller
     {
         $product = Product::find($id);
 
-        if(!$product){
-            return response()->json([
-                "message" => "Product not found"
-            ],404);
+        if (!$product) {
+            return response()->json(["message" => "Product not found"], 404);
         }
 
         $product->delete();
 
-        return response()->json([
-            "message" => "Product deleted"
-        ]);
+        return response()->json(["message" => "Product deleted"]);
     }
 
-    public function up(): void
-    {
-        Schema::create('product_images', function (Blueprint $table) {
-            $table->id();
-
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-
-            $table->string('image');
-
-            $table->timestamps();
-        });
-    }   
-    
     public function deleteImage($id)
     {
         $image = ProductImage::find($id);
 
-        if(!$image){
-            return response()->json([
-                "message"=>"Image not found"
-            ],404);
+        if (!$image) {
+            return response()->json(["message" => "Image not found"], 404);
         }
 
         $image->delete();
 
-        return response()->json([
-            "message"=>"Image deleted"
-        ]);
+        return response()->json(["message" => "Image deleted"]);
     }
 
     public function upload(Request $request)
@@ -197,15 +148,11 @@ class ProductController extends Controller
         if (!$request->hasFile('image')) {
             return response()->json(['message' => 'No image uploaded'], 400);
         }
-    
+
         $file = $request->file('image');
-        $filename = time().'_'.$file->getClientOriginalName();
-    
-        // simpan di storage/app/public/products
+        $filename = time() . '_' . $file->getClientOriginalName();
         $file->storeAs('products', $filename, 'public');
-    
-        // kembalikan URL file agar seedProducts bisa pakai
+
         return response()->json(['url' => $filename]);
     }
-    
 }
