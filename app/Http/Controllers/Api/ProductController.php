@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Http\Controller;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\ProductImage;
