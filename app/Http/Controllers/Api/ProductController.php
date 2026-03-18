@@ -149,6 +149,28 @@ class ProductController extends Controller
         return response()->json(["message" => "Image deleted"]);
     }
 
+    public function destroyImage($id)
+    {
+        // Cari gambar tunggal
+        $image = ProductImage::find($id);
+    
+        if (!$image) {
+            return response()->json(['message' => 'Gambar tidak ditemukan'], 404);
+        }
+    
+        // Hapus file fisik dari folder storage
+        if ($image->image && Storage::disk('public')->exists('products/' . $image->image)) {
+            Storage::disk('public')->delete('products/' . $image->image);
+        }
+    
+        // Hapus data dari database
+        $image->delete();
+    
+        return response()->json([
+            'message' => 'Gambar berhasil dihapus'
+        ]);
+    }
+    
     public function upload(Request $request)
     {
         if (!$request->hasFile('image')) {
