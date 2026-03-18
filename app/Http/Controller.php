@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Api;
 
 // Memastikan AuthController mengenali induknya di App\Http\Controllers\Controller
-use App\Http\Api\Controller;
+use App\Http\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
