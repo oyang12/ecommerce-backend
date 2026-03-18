@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Api;
 
 // Memastikan alamat induk benar agar tidak Error 500
 use App\Http\Api\Controller; 
