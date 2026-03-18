@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+// PENTING: Baris di bawah ini harus ada agar AuthController tahu siapa "induk"-nya
+use App\Http\Controllers\Controller; 
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,20 +27,24 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Hapus token lama dan buat token baru
+        // Hapus token lama agar tidak menumpuk, lalu buat token baru
         $user->tokens()->delete();
-        $token = $user->createToken('admin-token')->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login Berhasil',
             'token'   => $token,
-            'user'    => $user
+            'user'    => [
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $user->role, // Kirim role agar Next.js tahu dia Admin atau Customer
+            ]
         ]);
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out']);
+        return response()->json(['message' => 'Logged out successfully']);
     }
 }
