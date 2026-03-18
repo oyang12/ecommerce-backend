@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,47 +11,57 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. SEEDER USER (Admin & Customer)
-        // Hapus user lama agar tidak duplikat saat seeding ulang
+        // 1. Matikan pengecekan relasi agar tidak error saat hapus data
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        // 2. Bersihkan tabel
         DB::table('users')->truncate();
-
-        User::create([
-            'name'     => 'Admin MyStore',
-            'email'    => 'admin@mystore.com',
-            'password' => Hash::make('password123'),
-            'role'     => 'admin',
-        ]);
-
-        User::create([
-            'name'     => 'Budi Pembeli',
-            'email'    => 'budi@gmail.com',
-            'password' => Hash::make('password123'),
-            'role'     => 'customer',
-        ]);
-
-        // 2. SEEDER PRODUCT (5 Produk)
         DB::table('products')->truncate();
 
+        // 3. Isi User (Admin & Customer)
+        DB::table('users')->insert([
+            [
+                'name' => 'Admin MyStore',
+                'email' => 'admin@mystore.com',
+                'password' => Hash::make('password123'),
+                'role' => 'admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Budi Pembeli',
+                'email' => 'budi@gmail.com',
+                'password' => Hash::make('password123'),
+                'role' => 'customer',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        ]);
+
+        // 4. Isi 5 Produk (Hanya kolom yang pasti ada di screenshot kamu)
         $products = [
-            ['name' => 'Kemeja Aesthetic White', 'price' => 150000, 'stock' => 10],
-            ['name' => 'Celana Chino Modern', 'price' => 200000, 'stock' => 5],
-            ['name' => 'Kaos Polos Minimalist', 'price' => 85000, 'stock' => 20],
-            ['name' => 'Jaket Denim Vintage', 'price' => 350000, 'stock' => 3],
-            ['name' => 'Sepatu Sneakers Urban', 'price' => 450000, 'stock' => 7],
+            'Kemeja Aesthetic White', 
+            'Celana Chino Modern', 
+            'Kaos Polos Minimalist', 
+            'Jaket Denim Vintage', 
+            'Sepatu Sneakers Urban'
         ];
 
-        foreach ($products as $product) {
+        foreach ($products as $index => $name) {
             DB::table('products')->insert([
-                'name'        => $product['name'],
-                'slug'        => Str::slug($product['name']),
-                'description' => 'Produk berkualitas tinggi dengan desain ' . $product['name'],
-                'price'       => $product['price'],
-                'stock'       => $product['stock'],
-                'image'       => 'https://placehold.co/600x400?text=' . urlencode($product['name']),
-                'thumbnail'   => 'https://placehold.co/200x200?text=Thumb',
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'name' => $name,
+                'slug' => Str::slug($name),
+                'description' => 'Produk aesthetic untuk koleksi kamu.',
+                'price' => 100000 + ($index * 50000),
+                'stock' => 10,
+                'image' => 'https://placehold.co/600x400',
+                'thumbnail' => 'https://placehold.co/200x200',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
+
+        // 5. Hidupkan kembali pengecekan relasi
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
     }
 }
