@@ -40,15 +40,24 @@ class ProductController extends Controller
         }
     }
 
-    public function show($slug)
+    public function show($id) // Atau fungsi yang kamu gunakan untuk mengambil data edit
     {
-        $product = Product::where('slug', $slug)->with(['images', 'categories'])->first();
-        
+        // Gunakan 'with' untuk mengambil relasi images sekalian
+        $product = Product::with('images')->find($id);
+    
         if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
+            return response()->json(['message' => 'Produk tidak ditemukan'], 404);
         }
-
-        return response()->json($product);
+    
+        // Ubah format data gambar agar lebih mudah dipakai di Frontend
+        $product->images->each(function($image) {
+            // Tambahkan URL lengkap untuk setiap gambar
+            $image->url = asset('storage/products/' . $image->image);
+        });
+    
+        return response()->json([
+            'data' => $product
+        ]);
     }
 
     public function store(Request $request)
