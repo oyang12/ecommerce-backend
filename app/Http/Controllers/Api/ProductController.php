@@ -13,12 +13,27 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            // Coba ambil produk tanpa relasi categories dulu untuk tes
-            $products = Product::with(['images'])->latest()->paginate(12);
+            // 1. Coba ambil produk TANPA relasi categories dulu
+            // Banyak error 500 terjadi karena tabel 'categories' belum dibuat/di-migrate
+            $query = Product::with(['images']); 
+    
+            if ($request->search) {
+                $query->where('name', 'like', '%' . $request->search . '%');
+            }
+    
+            // 2. Gunakan get() dulu untuk memastikan data keluar
+            $products = $query->latest()->paginate(12);
+    
             return response()->json($products);
+    
         } catch (\Exception $e) {
-            // Ini akan menampilkan pesan error asli di browser/postman daripada angka 500 saja
-            return response()->json(['error' => $e->getMessage()], 500);
+            // 3. JIKA ERROR, kode ini akan menampilkan pesan error aslinya di browser
+            // Jadi kamu tidak akan melihat angka 500 lagi, tapi pesan error detilnya
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'trace' => 'Cek apakah tabel products dan product_images sudah di-migrate di database'
+            ], 500);
         }
     }
 
