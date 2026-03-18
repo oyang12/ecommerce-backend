@@ -12,8 +12,11 @@ class Product extends Model
         'description',
         'price',
         'stock',
-        'image'
+        // 'image' dan 'thumbnail' tidak perlu ada di sini jika datanya di tabel lain
     ];
+
+    // Menambahkan 'thumbnail_url' ke dalam output JSON secara otomatis
+    protected $appends = ['thumbnail_url'];
 
     public function images()
     {
@@ -22,9 +25,23 @@ class Product extends Model
 
     public function categories()
     {
-        return $this->belongsToMany(Category::class,'product_categories');
+        return $this->belongsToMany(Category::class, 'product_categories');
     }
 
+    /**
+     * ACCESSOR: Membuat kolom bayangan 'thumbnail_url'
+     * Fungsi ini akan mengambil foto pertama dari tabel product_images
+     */
+    public function getThumbnailUrlAttribute()
+    {
+        // Ambil foto pertama dari relasi images
+        $firstImage = $this->images()->first();
 
-    
+        if ($firstImage) {
+            return asset('storage/products/' . $firstImage->image);
+        }
+
+        // Jika tidak ada foto, tampilkan placeholder agar tidak pecah
+        return 'https://placehold.co/600x400?text=No+Image';
+    }
 }
