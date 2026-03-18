@@ -13,26 +13,29 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            // 1. Coba ambil produk TANPA relasi categories dulu
-            // Banyak error 500 terjadi karena tabel 'categories' belum dibuat/di-migrate
-            $query = Product::with(['images']); 
+            // Log 1: Memastikan fungsi terpanggil
+            \Log::info('Step 1: Masuk ke fungsi index');
     
-            if ($request->search) {
-                $query->where('name', 'like', '%' . $request->search . '%');
-            }
+            $query = Product::query();
     
-            // 2. Gunakan get() dulu untuk memastikan data keluar
+            // Log 2: Cek apakah relasi images bermasalah
+            \Log::info('Step 2: Mencoba memuat relasi images');
+            $query->with(['images']);
+    
             $products = $query->latest()->paginate(12);
     
+            // Log 3: Berhasil
+            \Log::info('Step 3: Data berhasil ditarik');
             return response()->json($products);
     
         } catch (\Exception $e) {
-            // 3. JIKA ERROR, kode ini akan menampilkan pesan error aslinya di browser
-            // Jadi kamu tidak akan melihat angka 500 lagi, tapi pesan error detilnya
+            // Log Error: Mencatat pesan error ke log Railway
+            \Log::error('ERROR DI PRODUCTS: ' . $e->getMessage());
+    
             return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-                'trace' => 'Cek apakah tabel products dan product_images sudah di-migrate di database'
+                'debug_error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ], 500);
         }
     }
