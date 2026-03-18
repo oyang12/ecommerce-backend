@@ -192,4 +192,20 @@ class ProductController extends Controller
         ]);
     }
 
+    public function upload(Request $request)
+    {
+        if (!$request->hasFile('image')) {
+            return response()->json(['message' => 'No image uploaded'], 400);
+        }
+    
+        $file = $request->file('image');
+        $filename = time().'_'.$file->getClientOriginalName();
+    
+        // simpan di storage/app/public/products
+        $file->storeAs('products', $filename, 'public');
+    
+        // kembalikan URL file agar seedProducts bisa pakai
+        return response()->json(['url' => $filename]);
+    }
+    
 }
