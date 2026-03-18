@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Api;
+namespace App\Http\Controllers\Api;
 
 // Memastikan alamat induk benar agar tidak Error 500
-use App\Http\Controller; 
+use App\Http\Controllers\Controller; 
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
