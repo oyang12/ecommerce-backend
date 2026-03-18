@@ -20,13 +20,16 @@ class ProductSeeder extends Seeder
 
         foreach ($products as $product) {
             DB::table('products')->insert([
-                'name' => $product['name'],
-                'slug' => Str::slug($product['name']),
-                'price' => $product['price'],
-                'stock' => $product['stock'],
-                'description' => 'Deskripsi untuk ' . $product['name'],
-                'created_at' => now(),
-                'updated_at' => now(),
+                'name'        => $product['name'],
+                'slug'        => Str::slug($product['name']),
+                'description' => 'Produk berkualitas tinggi dengan desain ' . $product['name'],
+                'price'       => $product['price'],
+                'stock'       => $product['stock'],
+                // Sementara kita isi URL dummy dulu agar tidak kosong
+                'image'       => 'https://placehold.co/600x400?text=' . urlencode($product['name']),
+                'thumbnail'   => 'https://placehold.co/200x200?text=Thumb',
+                'created_at'  => now(),
+                'updated_at'  => now(),
             ]);
         }
     }
