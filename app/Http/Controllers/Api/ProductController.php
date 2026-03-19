@@ -62,43 +62,62 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $product = Product::create([
-            'name'        => $request->name,
-            'slug'        => $request->slug ?? Str::slug($request->name),
-            'description' => $request->description,
-            'price'       => $request->price,
-            'stock'       => $request->stock
-        ]);
-
-        $thumbnail = null;
-
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $file) {
-                // Tambahkan random string agar nama file benar-benar unik
-                $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
-                
-                $file->storeAs('products', $filename, 'public');
-        
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'image'      => $filename
-                ]);
-        
-                if ($index == 0) {
-                    $thumbnail = $filename;
+        // Gunakan try-catch agar jika ada error file, database tidak 'kotor'
+        try {
+            $product = Product::create([
+                'name'        => $request->name,
+                'slug'        => $request->slug ?? Str::slug($request->name),
+                'description' => $request->description,
+                'price'       => $request->price,
+                'stock'       => $request->stock, // Tambahkan koma di sini
+                'image'       => null, // Default null, akan diupdate setelah upload
+                'thumbnail'   => null,
+            ]);
+    
+            if ($request->hasFile('images')) {
+                $thumbnail = null;
+    
+                foreach ($request->file('images') as $index => $file) {
+                    // Nama file unik agar tidak bentrok di server
+                    $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
+                    
+                    // Simpan ke storage public/products
+                    $file->storeAs('products', $filename, 'public');
+            
+                    // Simpan ke tabel relasi
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image'      => $filename
+                    ]);
+            
+                    // Set foto pertama sebagai thumbnail dan image utama
+                    if ($index == 0) {
+                        $thumbnail = $filename;
+                    }
                 }
+    
+                // Update kolom image dan thumbnail sekaligus agar tidak "No Image" lagi
+                $product->update([
+                    'image'     => $thumbnail,
+                    'thumbnail' => $thumbnail
+                ]);
             }
-            $product->update(['thumbnail' => $thumbnail]);
+    
+            if ($request->categories) {
+                $product->categories()->sync($request->categories);
+            }
+    
+            return response()->json([
+                "message" => "Product created successfully",
+                "data"    => $product->load('images')
+            ], 201);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Failed to create product",
+                "error"   => $e->getMessage()
+            ], 500);
         }
-
-        if ($request->categories) {
-            $product->categories()->sync($request->categories);
-        }
-
-        return response()->json([
-            "message" => "Product created",
-            "data"    => $product->load('images')
-        ]);
     }
 
     public function update(Request $request, $id)
