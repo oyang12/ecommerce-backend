@@ -62,51 +62,51 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Buat produk dasar terlebih dahulu
+        $filenames = [];
+        $mainImage = null;
+    
+        // 1. Proses upload gambar DULU sebelum simpan produk
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $index => $file) {
+                $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
+                $file->storeAs('products', $filename, 'public');
+                
+                // Simpan semua nama file ke array sementara
+                $filenames[] = $filename;
+    
+                // Tentukan gambar pertama sebagai gambar utama
+                if ($index == 0) {
+                    $mainImage = $filename;
+                }
+            }
+        }
+    
+        // 2. Simpan produk (Sekarang image & thumbnail TIDAK AKAN null lagi)
         $product = Product::create([
             'name'        => $request->name,
             'slug'        => $request->slug ?? Str::slug($request->name),
             'description' => $request->description,
             'price'       => $request->price,
             'stock'       => $request->stock,
-            'image'       => null,
-            'thumbnail'   => null,
+            'image'       => $mainImage,      // Langsung terisi
+            'thumbnail'   => $mainImage,      // Langsung terisi
         ]);
     
-        // 2. Proses upload gambar jika ada
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $file) {
-                // Buat nama file unik
-                $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
-                
-                // Simpan file ke storage public/products
-                $file->storeAs('products', $filename, 'public');
-        
-                // Simpan ke tabel relasi product_images
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'image'      => $filename
-                ]);
-        
-                // JIKA ini adalah file pertama (index 0), LANGSUNG update tabel products
-                if ($index == 0) {
-                    $product->update([
-                        'image'     => $filename,
-                        'thumbnail' => $filename
-                    ]);
-                }
-            }
+        // 3. Simpan daftar galeri ke tabel product_images
+        foreach ($filenames as $name) {
+            ProductImage::create([
+                'product_id' => $product->id,
+                'image'      => $name
+            ]);
         }
     
-        // 3. Sinkronisasi kategori
         if ($request->categories) {
             $product->categories()->sync($request->categories);
         }
     
-        // Load ulang data terbaru untuk dikirim ke frontend
         return response()->json([
-            "message" => "Product created and thumbnail set",
-            "data"    => $product->fresh()->load('images') 
+            "message" => "Product created successfully with image",
+            "data"    => $product->load('images')
         ], 201);
     }
 
