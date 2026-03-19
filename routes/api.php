@@ -38,7 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload', [ProductController::class, 'upload']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
-    Route::delete('/product-images/{id}', [ProductController::class, 'destroyImage']);
+    Route::delete('/product-images/{id}', [ProductController::class, 'deleteImage']);
     Route::post('/categories', [CategoryController::class, 'store']);
 
     // === AREA PENGGUNA (Cart & Order) ===
