@@ -108,27 +108,53 @@ class ProductController extends Controller
             "data"    => $product->load('images')
         ], 201);
     }
+    
     public function update(Request $request, $id)
-    {
-        $product = Product::find($id);
+{
+    $product = Product::findOrFail($id);
+    
+    // 1. Update data teks dasar
+    $product->update([
+        'name'        => $request->name,
+        'slug'        => $request->slug ?? Str::slug($request->name),
+        'description' => $request->description,
+        'price'       => $request->price,
+        'stock'       => $request->stock,
+    ]);
 
-        if (!$product) {
-            return response()->json(["message" => "Product not found"], 404);
+    // 2. Jika ada upload foto baru
+    if ($request->hasFile('images')) {
+        $newImages = [];
+        foreach ($request->file('images') as $index => $file) {
+            $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
+            $file->storeAs('products', $filename, 'public');
+            
+            // Simpan ke tabel product_images
+            ProductImage::create([
+                'product_id' => $product->id,
+                'image'      => $filename
+            ]);
+
+            $newImages[] = $filename;
         }
 
+        // OTOMATIS: Jadikan foto pertama dari upload baru sebagai cover utama
         $product->update([
-            'name'        => $request->name ?? $product->name,
-            'slug'        => $request->slug ?? $product->slug,
-            'description' => $request->description ?? $product->description,
-            'price'       => $request->price ?? $product->price,
-            'stock'       => $request->stock ?? $product->stock,
-        ]);
-
-        return response()->json([
-            "message" => "Product updated",
-            "data"    => $product
+            'image'     => $newImages[0],
+            'thumbnail' => $newImages[0]
         ]);
     }
+
+    // 3. Sinkronisasi Kategori
+    if ($request->categories) {
+        $product->categories()->sync($request->categories);
+    }
+
+    return response()->json([
+        "message" => "Update berhasil!",
+        "data"    => $product->fresh()->load('images')
+    ]);
+}
 
     public function destroy($id)
     {
