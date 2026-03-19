@@ -62,41 +62,40 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $filenames = [];
         $mainImage = null;
+        $allImages = [];
     
-        // 1. Proses upload gambar DULU sebelum simpan produk
+        // 1. Ambil dan simpan gambar fisiknya dulu
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $file) {
                 $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
                 $file->storeAs('products', $filename, 'public');
                 
-                // Simpan semua nama file ke array sementara
-                $filenames[] = $filename;
+                $allImages[] = $filename; // Simpan untuk tabel galeri nanti
     
-                // Tentukan gambar pertama sebagai gambar utama
+                // Tentukan gambar pertama sebagai cover utama
                 if ($index == 0) {
                     $mainImage = $filename;
                 }
             }
         }
     
-        // 2. Simpan produk (Sekarang image & thumbnail TIDAK AKAN null lagi)
+        // 2. Simpan produk utama (Sekarang variabel $mainImage sudah punya nilai)
         $product = Product::create([
             'name'        => $request->name,
             'slug'        => $request->slug ?? Str::slug($request->name),
             'description' => $request->description,
             'price'       => $request->price,
             'stock'       => $request->stock,
-            'image'       => $mainImage,      // Langsung terisi
-            'thumbnail'   => $mainImage,      // Langsung terisi
+            'image'       => $mainImage, // Langsung isi bareng nama & harga
+            'thumbnail'   => $mainImage, // Langsung isi bareng nama & harga
         ]);
     
-        // 3. Simpan daftar galeri ke tabel product_images
-        foreach ($filenames as $name) {
+        // 3. Simpan ke tabel galeri product_images
+        foreach ($allImages as $imageName) {
             ProductImage::create([
                 'product_id' => $product->id,
-                'image'      => $name
+                'image'      => $imageName
             ]);
         }
     
@@ -105,11 +104,10 @@ class ProductController extends Controller
         }
     
         return response()->json([
-            "message" => "Product created successfully with image",
+            "message" => "Berhasil! Cek kolom image di database.",
             "data"    => $product->load('images')
         ], 201);
     }
-
     public function update(Request $request, $id)
     {
         $product = Product::find($id);
