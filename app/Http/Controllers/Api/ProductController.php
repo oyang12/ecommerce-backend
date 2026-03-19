@@ -89,7 +89,7 @@ class ProductController extends Controller
                 ]);
         
                 // JIKA ini adalah file pertama (index 0), LANGSUNG update tabel products
-                if ($index === 0) {
+                if ($index == 0) {
                     $product->update([
                         'image'     => $filename,
                         'thumbnail' => $filename
