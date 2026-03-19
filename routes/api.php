@@ -19,7 +19,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // --- 2. PUBLIC ROUTES (Bisa diakses tanpa login) ---
 Route::get('/products', [ProductController::class, 'index']);
-Route::get('/product/{slug}', [ProductController::class, 'show']);
+Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/products/{id}/reviews', [ReviewController::class, 'productReviews']);
 
