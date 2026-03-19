@@ -62,62 +62,57 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        // Gunakan try-catch agar jika ada error file, database tidak 'kotor'
-        try {
-            $product = Product::create([
-                'name'        => $request->name,
-                'slug'        => $request->slug ?? Str::slug($request->name),
-                'description' => $request->description,
-                'price'       => $request->price,
-                'stock'       => $request->stock, // Tambahkan koma di sini
-                'image'       => null, // Default null, akan diupdate setelah upload
-                'thumbnail'   => null,
-            ]);
+        // 1. Buat produk tanpa image dulu
+        $product = Product::create([
+            'name'        => $request->name,
+            'slug'        => $request->slug ?? Str::slug($request->name),
+            'description' => $request->description,
+            'price'       => $request->price,
+            'stock'       => $request->stock,
+            'image'       => null,
+            'thumbnail'   => null,
+        ]);
     
-            if ($request->hasFile('images')) {
-                $thumbnail = null;
+        // 2. Cek apakah ada file yang diunggah
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
+            $firstFileName = null;
     
-                foreach ($request->file('images') as $index => $file) {
-                    // Nama file unik agar tidak bentrok di server
-                    $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
-                    
-                    // Simpan ke storage public/products
-                    $file->storeAs('products', $filename, 'public');
-            
-                    // Simpan ke tabel relasi
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image'      => $filename
-                    ]);
-            
-                    // Set foto pertama sebagai thumbnail dan image utama
-                    if ($index == 0) {
-                        $thumbnail = $filename;
-                    }
+            foreach ($files as $index => $file) {
+                $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
+                
+                // Simpan file fisik
+                $file->storeAs('products', $filename, 'public');
+        
+                // Simpan ke tabel relasi product_images
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image'      => $filename
+                ]);
+        
+                // Ambil nama file pertama untuk thumbnail utama
+                if ($index === 0) {
+                    $firstFileName = $filename;
                 }
+            }
     
-                // Update kolom image dan thumbnail sekaligus agar tidak "No Image" lagi
+            // 3. UPDATE PRODUK: Pastikan ini jalan jika $firstFileName ada
+            if ($firstFileName) {
                 $product->update([
-                    'image'     => $thumbnail,
-                    'thumbnail' => $thumbnail
+                    'image'     => $firstFileName,
+                    'thumbnail' => $firstFileName
                 ]);
             }
-    
-            if ($request->categories) {
-                $product->categories()->sync($request->categories);
-            }
-    
-            return response()->json([
-                "message" => "Product created successfully",
-                "data"    => $product->load('images')
-            ], 201);
-    
-        } catch (\Exception $e) {
-            return response()->json([
-                "message" => "Failed to create product",
-                "error"   => $e->getMessage()
-            ], 500);
         }
+    
+        if ($request->categories) {
+            $product->categories()->sync($request->categories);
+        }
+    
+        return response()->json([
+            "message" => "Product created and images attached",
+            "data"    => $product->refresh()->load('images') // Refresh agar data terbaru muncul
+        ], 201);
     }
 
     public function update(Request $request, $id)
