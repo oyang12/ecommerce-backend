@@ -12,7 +12,8 @@ class Product extends Model
         'description',
         'price',
         'stock',
-        // 'image' dan 'thumbnail' tidak perlu ada di sini jika datanya di tabel lain
+        'image',     // Tambahkan ini!
+        'thumbnail', // Tambahkan ini!
     ];
 
     // Menambahkan 'thumbnail_url' ke dalam output JSON secara otomatis
