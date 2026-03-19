@@ -62,7 +62,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Buat produk tanpa image dulu
+        // 1. Buat produk dasar terlebih dahulu
         $product = Product::create([
             'name'        => $request->name,
             'slug'        => $request->slug ?? Str::slug($request->name),
@@ -73,15 +73,13 @@ class ProductController extends Controller
             'thumbnail'   => null,
         ]);
     
-        // 2. Cek apakah ada file yang diunggah
+        // 2. Proses upload gambar jika ada
         if ($request->hasFile('images')) {
-            $files = $request->file('images');
-            $firstFileName = null;
-    
-            foreach ($files as $index => $file) {
+            foreach ($request->file('images') as $index => $file) {
+                // Buat nama file unik
                 $filename = time() . '_' . Str::random(5) . '_' . $file->getClientOriginalName();
                 
-                // Simpan file fisik
+                // Simpan file ke storage public/products
                 $file->storeAs('products', $filename, 'public');
         
                 // Simpan ke tabel relasi product_images
@@ -90,28 +88,25 @@ class ProductController extends Controller
                     'image'      => $filename
                 ]);
         
-                // Ambil nama file pertama untuk thumbnail utama
+                // JIKA ini adalah file pertama (index 0), LANGSUNG update tabel products
                 if ($index === 0) {
-                    $firstFileName = $filename;
+                    $product->update([
+                        'image'     => $filename,
+                        'thumbnail' => $filename
+                    ]);
                 }
-            }
-    
-            // 3. UPDATE PRODUK: Pastikan ini jalan jika $firstFileName ada
-            if ($firstFileName) {
-                $product->update([
-                    'image'     => $firstFileName,
-                    'thumbnail' => $firstFileName
-                ]);
             }
         }
     
+        // 3. Sinkronisasi kategori
         if ($request->categories) {
             $product->categories()->sync($request->categories);
         }
     
+        // Load ulang data terbaru untuk dikirim ke frontend
         return response()->json([
-            "message" => "Product created and images attached",
-            "data"    => $product->refresh()->load('images') // Refresh agar data terbaru muncul
+            "message" => "Product created and thumbnail set",
+            "data"    => $product->fresh()->load('images') 
         ], 201);
     }
 
