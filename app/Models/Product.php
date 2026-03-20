@@ -12,6 +12,7 @@ class Product extends Model
         'description',
         'price',
         'stock',
+        'disc',
         'image',     // Tambahkan ini!
         'thumbnail', // Tambahkan ini!
     ];
