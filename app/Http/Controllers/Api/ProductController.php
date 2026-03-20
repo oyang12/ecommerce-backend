@@ -88,7 +88,7 @@ class ProductController extends Controller
             'stock'       => $request->stock,
             'image'       => $mainImage, // Langsung isi bareng nama & harga
             'thumbnail'   => $mainImage, // Langsung isi bareng nama & harga
-            'stock'       => $request->disc,                       
+            'disc'       => $request->disc,                       
         ]);
     
         // 3. Simpan ke tabel galeri product_images
@@ -120,6 +120,7 @@ class ProductController extends Controller
         'description' => $request->description,
         'price'       => $request->price,
         'stock'       => $request->stock,
+        'disc'        => $request->disc,             
     ]);
 
     // 2. Jika ada upload foto baru
