@@ -12,9 +12,9 @@ class Product extends Model
         'description',
         'price',
         'stock',
-        'disc',
         'image',     // Tambahkan ini!
         'thumbnail', // Tambahkan ini!
+        'disc',
     ];
 
     // Menambahkan 'thumbnail_url' ke dalam output JSON secara otomatis
